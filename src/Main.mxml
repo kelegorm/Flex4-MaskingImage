@@ -1,0 +1,105 @@
+<?xml version="1.0"?>
+<s:Application xmlns:fx="http://ns.adobe.com/mxml/2009" xmlns:s="library://ns.adobe.com/flex/spark"
+               xmlns:mx="library://ns.adobe.com/flex/mx"
+               backgroundColor="white"
+               fontSize="14"
+        >
+
+    <s:layout>
+        <s:VerticalLayout horizontalAlign="center" verticalAlign="middle" gap="25" />
+    </s:layout>
+
+    <fx:Script><![CDATA[
+
+        [Embed("image.png")]
+        private static const Turbine:Class;
+
+        private const size:int = 200;
+        private const _rect:Rectangle = new Rectangle(0, 0, size, size);
+        private const _point:Point = new Point();
+
+        private var _needRerenderImages:Boolean = true;
+
+        private var _aBitmap:BitmapData;
+        private var _bBitmap:BitmapData;
+
+        [Bindable]
+        private var copyPixelsResultBitmap:BitmapData;
+
+        private function get aBitmap():BitmapData {
+            if (!_aBitmap) {
+                _aBitmap = new BitmapData(size, size, true, 0x00000000);
+                _aBitmap.draw(new Turbine());
+            }
+            return _aBitmap;
+        }
+
+        private function get bBitmap():BitmapData {
+            if (!_bBitmap) {
+                _bBitmap = new BitmapData(size, size, true, 0x00000000);
+
+                var shape:Shape = new Shape();
+                shape.graphics.beginFill(0xffffff, 1);
+                shape.graphics.drawEllipse(0, 0, size, size);
+                shape.graphics.endFill();
+
+                _bBitmap.draw(shape);
+            }
+            return _bBitmap;
+        }
+
+        override protected function commitProperties():void {
+            super.commitProperties();
+
+            if (_needRerenderImages) {
+
+                calculateImage();
+
+                _needRerenderImages = false;
+            }
+        }
+
+        private function calculateImage():void {
+            var originalBitmap:BitmapData = aBitmap.clone();
+            var maskBitmap:BitmapData = bBitmap.clone();
+
+            var newBitmap:BitmapData = new BitmapData(size, size, true, 0x00000000);
+
+            // Copy pixels to new EMPTY BitmapData only.
+            // See explanations here: https://github.com/kelegorm/Flex4-MaskingImage/blob/master/README.md#what-is-main-moment
+            newBitmap.copyPixels(originalBitmap, _rect, _point, maskBitmap, _point, true);
+
+            // you can also apply result alpha chanel to original image:
+//            originalBitmap.copyChannel(newBitmap, _rect, _point, BitmapDataChannel.ALPHA, BitmapDataChannel.ALPHA);
+
+            copyPixelsResultBitmap = newBitmap;
+
+        }
+        ]]></fx:Script>
+
+    <s:Label text="copyPixels() example" fontSize="20" />
+
+    <s:HGroup>
+        <s:VGroup>
+            <s:Label text="Original image:" />
+            <s:BorderContainer borderAlpha=".5" backgroundColor="0xecb2eb">
+                <s:BitmapImage id="aImage" source="{aBitmap}" />
+            </s:BorderContainer>
+        </s:VGroup>
+        <s:VGroup>
+            <s:Label text="Mask image:" />
+            <s:BorderContainer borderAlpha=".5" backgroundColor="0xecb2eb">
+                <s:BitmapImage id="bImage" source="{bBitmap}"/>
+            </s:BorderContainer>
+        </s:VGroup>
+    </s:HGroup>
+
+    <s:VGroup>
+        <s:Label text="Result:" />
+        <s:BorderContainer borderAlpha=".5" backgroundColor="0xecb2eb">
+            <s:BitmapImage source="{copyPixelsResultBitmap}" />
+        </s:BorderContainer>
+    </s:VGroup>
+
+    <mx:LinkButton label="See on github.com" click="navigateToURL(new URLRequest('https://github.com/kelegorm/Flex4-MaskingImage'), '_blank')" />
+</s:Application>
